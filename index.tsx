@@ -1,17 +1,37 @@
 import * as React from 'react';
 import { render } from 'react-dom';
-import { Machine, actions } from 'xstate';
+import {
+  actions,
+  DefaultContext,
+  Machine as createMachine,
+  StateSchema,
+  StateValue,
+  EventObject,
+} from 'xstate';
+import { Machine } from 'xstate/lib/types';
 const { assign } = actions;
 
-const addWater = assign({
-  amount: (ctx, event) => ctx.amount + 1,
-});
-
-function glassIsFull(ctx, event) {
-  return ctx.amount >= 10;
+interface GlassContext extends DefaultContext {
+  amount: number;
 }
 
-const glassMachine = Machine(
+interface GlassSchema extends StateSchema {
+  states: {
+    empty: {};
+    filling: {};
+    full: {};
+  };
+}
+
+interface GlassEvent extends EventObject {
+  type: 'FILL';
+}
+
+const glassMachine: Machine<
+  GlassContext,
+  GlassSchema,
+  GlassEvent
+> = createMachine<GlassContext, GlassSchema, GlassEvent>(
   {
     id: 'glass',
     context: {
@@ -43,18 +63,44 @@ const glassMachine = Machine(
     },
   },
   {
-    actions: { addWater },
-    guards: { glassIsFull },
+    actions: {
+      addWater: assign<GlassContext, GlassEvent>({
+        amount: (ctx, event) => ctx.amount + 1,
+      }),
+    },
+    guards: {
+      glassIsFull: (ctx, event) => ctx.amount >= 10,
+    },
   },
 );
 
-class Glass extends React.Component {
+class Glass extends React.Component<{}, { glassState: StateValue }> {
   constructor(props) {
     super(props);
+    this.state = {
+      glassState: glassMachine.initialState.value,
+    };
+  }
+
+  transition(event: GlassEvent) {
+    const nextState = glassMachine.transition(this.state.glassState, event);
+    nextState.actions.forEach(action => {
+      if (action.exec) {
+        action.exec(nextState.context, event);
+      }
+    });
+    this.setState({
+      glassState: nextState.value,
+    });
   }
 
   render() {
-    return <span>The glass is {glassMachine.initialState.value}</span>;
+    return (
+      <div>
+        <span>The glass is {this.state.glassState}</span>
+        <button onClick={() => this.transition({ type: 'FILL' })}>Fill</button>
+      </div>
+    );
   }
 }
 

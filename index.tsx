@@ -3,12 +3,12 @@ import { render } from 'react-dom';
 import {
   actions,
   DefaultContext,
-  Machine as createMachine,
+  Machine,
   StateSchema,
   EventObject,
   State,
 } from 'xstate';
-import { Machine } from 'xstate/lib/types';
+import { StateMachine } from 'xstate/lib/types';
 const { assign } = actions;
 
 interface GlassContext extends DefaultContext {
@@ -27,11 +27,11 @@ interface GlassEvent extends EventObject {
   type: 'FILL';
 }
 
-const glassMachine: Machine<
+const glassMachine: StateMachine<
   GlassContext,
   GlassSchema,
   GlassEvent
-> = createMachine<GlassContext, GlassSchema, GlassEvent>(
+> = Machine<GlassContext, GlassSchema, GlassEvent>(
   {
     id: 'glass',
     context: {
@@ -93,7 +93,7 @@ class Glass extends React.Component<
 
     nextState.actions.forEach(action => {
       if (action.exec) {
-        action.exec(nextState.context, event);
+        action.exec(nextState.context, event, { action });
       }
     });
 

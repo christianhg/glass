@@ -107,6 +107,7 @@ class Glass extends React.Component<
       <div>
         <span>The glass is {this.state.glass.value}</span>
         <button
+          disabled={this.state.glass.value === 'full'}
           onClick={() =>
             this.transition({ type: 'FILL' }, this.state.glass.context)
           }

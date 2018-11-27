@@ -5,8 +5,8 @@ import {
   DefaultContext,
   Machine as createMachine,
   StateSchema,
-  StateValue,
   EventObject,
+  State,
 } from 'xstate';
 import { Machine } from 'xstate/lib/types';
 const { assign } = actions;
@@ -65,7 +65,10 @@ const glassMachine: Machine<
   {
     actions: {
       addWater: assign<GlassContext, GlassEvent>({
-        amount: (ctx, event) => ctx.amount + 1,
+        amount: (ctx, event) => {
+          console.log(ctx);
+          return ctx.amount + 1;
+        },
       }),
     },
     guards: {
@@ -74,31 +77,42 @@ const glassMachine: Machine<
   },
 );
 
-class Glass extends React.Component<{}, { glassState: StateValue }> {
+class Glass extends React.Component<
+  {},
+  { glass: State<GlassContext, GlassEvent> }
+> {
   constructor(props) {
     super(props);
     this.state = {
-      glassState: glassMachine.initialState.value,
+      glass: glassMachine.initialState,
     };
   }
 
-  transition(event: GlassEvent) {
-    const nextState = glassMachine.transition(this.state.glassState, event);
+  transition(event: GlassEvent, context: GlassContext) {
+    const nextState = glassMachine.transition(this.state.glass, event, context);
+
     nextState.actions.forEach(action => {
       if (action.exec) {
         action.exec(nextState.context, event);
       }
     });
+
     this.setState({
-      glassState: nextState.value,
+      glass: nextState,
     });
   }
 
   render() {
     return (
       <div>
-        <span>The glass is {this.state.glassState}</span>
-        <button onClick={() => this.transition({ type: 'FILL' })}>Fill</button>
+        <span>The glass is {this.state.glass.value}</span>
+        <button
+          onClick={() =>
+            this.transition({ type: 'FILL' }, this.state.glass.context)
+          }
+        >
+          Fill
+        </button>
       </div>
     );
   }

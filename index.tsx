@@ -7,6 +7,7 @@ import {
   StateSchema,
   EventObject,
   State,
+  interpret,
 } from 'xstate';
 import { StateMachine } from 'xstate/lib/types';
 const { assign } = actions;
@@ -88,19 +89,13 @@ class Glass extends React.Component<
     };
   }
 
-  transition(event: GlassEvent, context: GlassContext) {
-    const nextState = glassMachine.transition(this.state.glass, event, context);
-
-    nextState.actions.forEach(action => {
-      if (action.exec) {
-        action.exec(nextState.context, event, { action });
-      }
-    });
-
-    this.setState({
-      glass: nextState,
-    });
-  }
+  interpreter = interpret(glassMachine)
+    .onTransition(nextState => {
+      this.setState({
+        glass: nextState,
+      });
+    })
+    .start();
 
   render() {
     return (
@@ -108,9 +103,7 @@ class Glass extends React.Component<
         <span>The glass is {this.state.glass.value}</span>
         <button
           disabled={this.state.glass.value === 'full'}
-          onClick={() =>
-            this.transition({ type: 'FILL' }, this.state.glass.context)
-          }
+          onClick={() => this.interpreter.send({ type: 'FILL' })}
         >
           Fill
         </button>

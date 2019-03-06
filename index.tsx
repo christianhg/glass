@@ -66,14 +66,11 @@ const glassMachine: StateMachine<
   {
     actions: {
       addWater: assign<GlassContext, GlassEvent>({
-        amount: (ctx, event) => {
-          console.log(ctx);
-          return ctx.amount + 1;
-        },
+        amount: ctx => ctx.amount + 1,
       }),
     },
     guards: {
-      glassIsFull: (ctx, event) => ctx.amount >= 10,
+      glassIsFull: ctx => ctx.amount >= 10,
     },
   },
 );
